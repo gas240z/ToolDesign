@@ -3,341 +3,186 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tool Lab — инструменты и обработка ошибок</title>
-<script>document.documentElement.dataset.theme=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')</script>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
-<style>
-:root{--pink:#ff4f9a;--blue:#3d6bff;--red:#ff3d54;
---bg:#f6f7ff;--card:rgba(255,255,255,.74);--solid:#fff;--text:#16122e;--mute:#66658a;--line:rgba(80,70,170,.15);--field:#f1f2ff;--shadow:0 18px 50px -20px rgba(61,107,255,.35);--blob:.5;
---sans:"Bricolage Grotesque",system-ui,sans-serif}
-[data-theme=dark]{--bg:#080b1c;--card:rgba(18,23,56,.72);--solid:#121738;--text:#f4f2ff;--mute:#a4a9d6;--line:rgba(160,170,255,.16);--field:#0b1030;--shadow:0 18px 50px -20px rgba(0,0,0,.7);--blob:.34}
-*{box-sizing:border-box}
-html.tx *,html.tx *::before{transition:background-color .45s,color .45s,border-color .45s,box-shadow .45s!important}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--sans);min-height:100vh;overflow-x:hidden}
-button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
-.ic{width:1.25em;height:1.25em;flex:none}
-
-/* фон */
-.bg{position:fixed;inset:0;z-index:-1;overflow:hidden}
-.bg i{position:absolute;width:46vmax;height:46vmax;border-radius:50%;filter:blur(90px);opacity:var(--blob);animation:drift 24s ease-in-out infinite alternate}
-.bg i:nth-child(1){background:var(--pink);top:-18vmax;left:-12vmax}
-.bg i:nth-child(2){background:var(--blue);right:-16vmax;top:8vmax;animation-delay:-8s}
-.bg i:nth-child(3){background:var(--red);bottom:-24vmax;left:30vw;width:36vmax;height:36vmax;animation-delay:-15s}
-@keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.18)}}
-
-.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 70px}
-header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.3rem;letter-spacing:-.02em}
-.logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--pink),var(--blue));box-shadow:0 8px 24px -6px var(--pink);animation:float 5s ease-in-out infinite}
-@keyframes float{50%{transform:translateY(-4px) rotate(-4deg)}}
-.tools-r{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.key{display:flex;align-items:center;gap:8px;background:var(--card);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:999px;padding:6px 14px;color:var(--mute);transition:.25s}
-.key:focus-within{border-color:var(--pink);box-shadow:0 0 0 4px rgba(255,79,154,.18)}
-.key input{border:0;background:transparent;outline:0;width:190px;padding:4px 0}
-.theme{position:relative;width:76px;height:40px;border-radius:999px;border:1px solid var(--line);cursor:pointer;padding:0;overflow:hidden;background:linear-gradient(100deg,#ffd9ea,#d6e3ff);transition:background .5s}
-.theme::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .5s;background:radial-gradient(2px 2px at 16px 10px,#fff,transparent),radial-gradient(1.5px 1.5px at 30px 26px,#fff,transparent),radial-gradient(2px 2px at 46px 12px,#fff,transparent),radial-gradient(1.5px 1.5px at 24px 18px,#ff8cc0,transparent)}
-[data-theme=dark] .theme{background:linear-gradient(100deg,#141a48,#2a1f5e)}[data-theme=dark] .theme::before{opacity:1}
-.theme .knob{position:absolute;top:4px;left:4px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#ff7a5c,var(--pink));box-shadow:0 4px 14px -2px var(--pink);transition:transform .55s cubic-bezier(.5,1.5,.4,1),background .5s}
-[data-theme=dark] .theme .knob{transform:translateX(36px);background:linear-gradient(135deg,#7aa3ff,var(--blue));box-shadow:0 4px 14px -2px var(--blue)}
-.knob span{position:absolute;inset:0;display:grid;place-items:center;transition:transform .55s,opacity .35s}
-.knob .ic{width:18px;height:18px}
-.knob .mi{opacity:0;transform:rotate(-90deg) scale(.4)}
-[data-theme=dark] .knob .si{opacity:0;transform:rotate(90deg) scale(.4)}
-[data-theme=dark] .knob .mi{opacity:1;transform:none}
-.theme:hover .knob{filter:brightness(1.1)}
-.ai-wrap{position:relative}
-.ai{display:flex;align-items:center;gap:10px;background:var(--card);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:999px;padding:5px 16px 5px 6px;cursor:pointer;font-weight:600;position:relative;transition:.3s}
-.ai:hover{transform:translateY(-2px)}
-.ai .face{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--mute);transition:.4s}
-.ai[data-on=true] .face{background:linear-gradient(135deg,var(--pink),var(--blue));animation:buzz 2.4s ease-in-out infinite}
-.ai[data-on=true]{border-color:color-mix(in srgb,var(--pink) 60%,transparent);box-shadow:0 0 0 4px rgba(255,79,154,.14)}
-@keyframes buzz{0%,100%{transform:scale(1)}50%{transform:scale(1.14) rotate(-6deg)}}
-.zz{position:absolute;right:10px;top:-8px;font-weight:800;color:var(--pink);pointer-events:none;display:none}
-.ai[data-on=false] .zz{display:block}
-.zz,.zz b{animation:zz 2.4s ease-in infinite}.zz b{display:inline-block;animation-delay:.5s;font-size:.8em}.zz b+b{animation-delay:1s}
-@keyframes zz{0%{opacity:0;transform:translateY(8px)}30%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
-.pop{position:absolute;right:0;top:calc(100% + 12px);width:300px;padding:16px;border-radius:18px;background:var(--solid);border:1px solid var(--line);box-shadow:var(--shadow);z-index:5;animation:pop .35s cubic-bezier(.2,.9,.3,1.2)}
-.pop[hidden]{display:none}.pop p{margin:0 0 8px;font-size:.92rem;color:var(--mute)}.pop b{color:var(--text)}
-.pop code{display:block;background:var(--field);border-radius:10px;padding:8px 12px;font:.85rem ui-monospace,monospace;color:var(--pink)}
-.hero{margin:44px 0 26px}
-h1{font-size:clamp(2.4rem,6vw,4.4rem);line-height:.98;margin:0 0 14px;font-weight:800;letter-spacing:-.04em;background:linear-gradient(100deg,var(--pink) 0%,var(--red) 38%,var(--blue) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;background-size:200% 100%;animation:shine 9s ease-in-out infinite alternate}
-@keyframes shine{to{background-position:100% 0}}
-.lead{margin:0;color:var(--mute);max-width:56ch;font-size:1.08rem}
-
-.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:0 0 26px}
-.lamp{display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:16px;border:1px solid var(--line);background:var(--card);backdrop-filter:blur(14px);color:var(--mute);font-size:.9rem;transition:.4s}
-.lamp .ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--field);transition:.4s;flex:none}
-.lamp b{display:block;color:var(--text);font-size:1rem}
-.lamp[data-s=success]{--c:var(--blue)}.lamp[data-s=handled]{--c:var(--pink)}.lamp[data-s=raised]{--c:var(--red)}
-.lamp .ico{color:var(--c)}
-.lamp.on{border-color:var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 18%,transparent),0 14px 30px -12px var(--c);transform:translateY(-2px)}
-.lamp.on .ico{background:var(--c);color:#fff}
-
-.lab{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
-@media(max-width:860px){.lab{grid-template-columns:1fr}}
-.glass{background:var(--card);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
-.nav{padding:14px}
-.nav h5{margin:14px 8px 8px;font-size:.85rem;color:var(--mute);font-weight:600}.nav h5:first-child{margin-top:4px}
-.tool{--c:var(--blue);display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:14px;padding:8px 10px;margin-bottom:4px;cursor:pointer;font-weight:600;transition:.25s}
-.tool[data-g=demo]{--c:var(--red)}.tool[data-g=ai]{--c:var(--pink)}
-.tool .tile{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);transition:.35s}
-.tool:hover{background:var(--field)}
-.tool:hover .tile{transform:scale(1.1) rotate(-6deg)}
-.tool[aria-pressed=true]{background:var(--solid);border-color:var(--c);box-shadow:0 10px 26px -12px var(--c);transform:translateX(4px)}
-.tool[aria-pressed=true] .tile{background:var(--c);color:#fff}
-
-.stage{--a:var(--blue);--b:var(--pink);padding:26px;min-width:0}
-.stage[data-g=demo]{--a:var(--red);--b:var(--pink)}.stage[data-g=ai]{--a:var(--pink);--b:var(--red)}
-.sh{display:flex;gap:16px;align-items:center;margin-bottom:6px}
-.big{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--a),var(--b));box-shadow:0 12px 28px -10px var(--a);font-size:1.5rem}
-.stage.swap .sh,.stage.swap .explain{animation:swap .45s cubic-bezier(.2,.8,.2,1)}
-@keyframes swap{from{opacity:0;transform:translateY(8px)}}
-h2{margin:0;font-size:1.7rem;letter-spacing:-.025em;font-weight:800}
-.explain{color:var(--mute);margin:8px 0 20px}
-.try{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
-.try span{color:var(--mute);font-size:.9rem}
-.chip{--c:var(--blue);display:inline-flex;align-items:center;gap:7px;border:1px solid color-mix(in srgb,var(--c) 45%,transparent);background:color-mix(in srgb,var(--c) 9%,transparent);border-radius:999px;padding:6px 14px;cursor:pointer;font-size:.9rem;transition:.25s}
-.chip[data-k=err]{--c:var(--pink)}
-.chip .ic{width:16px;height:16px;color:var(--c)}
-.chip:hover{background:var(--c);color:#fff;transform:translateY(-2px)}.chip:hover .ic{color:#fff}
-.form{display:grid;gap:16px}
-.f label{display:block;font-weight:600;margin-bottom:6px}
-.f small{display:block;color:var(--mute);margin-top:4px}
-input,select,textarea{width:100%;background:var(--field);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;transition:.25s}
-input:focus,select:focus,textarea:focus{outline:0;border-color:var(--a);box-shadow:0 0 0 4px color-mix(in srgb,var(--a) 20%,transparent);background:var(--solid)}
-textarea{min-height:110px;resize:vertical}
-.run{position:relative;overflow:hidden;margin-top:22px;display:inline-flex;align-items:center;gap:10px;border:0;border-radius:16px;padding:14px 30px;font-weight:800;font-size:1.05rem;color:#fff;cursor:pointer;background:linear-gradient(110deg,var(--a),var(--b));background-size:160% 100%;box-shadow:0 14px 30px -12px var(--a);transition:.3s}
-.run:hover{transform:translateY(-3px);background-position:100% 0;box-shadow:0 20px 36px -12px var(--a)}
-.run:active{transform:scale(.97)}
-.run:disabled{cursor:wait;opacity:.85}
-.spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-
-.res{margin-top:26px;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:var(--solid);animation:pop .5s cubic-bezier(.2,.9,.3,1.2)}
-@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}}
-.banner{display:flex;gap:12px;align-items:center;padding:16px 20px;font-weight:800;font-size:1.1rem;color:#fff}
-.banner .ic{width:26px;height:26px}
-.res[data-s=success]{--c:var(--blue)}.res[data-s=handled]{--c:var(--pink)}.res[data-s=raised]{--c:var(--red)}
-.res[data-s=success] .banner{background:linear-gradient(110deg,var(--blue),#6f9bff)}
-.res[data-s=handled] .banner{background:linear-gradient(110deg,var(--pink),#ff8cc0)}
-.res[data-s=raised] .banner{background:linear-gradient(110deg,var(--red),#ff7b5c)}
-.why{padding:14px 20px 0;color:var(--mute);font-size:.94rem}
-.steps{padding:16px 20px 0;display:grid;gap:10px;position:relative}
-.step{--c:var(--blue);display:grid;grid-template-columns:34px 1fr;gap:12px;animation:slide .5s both;animation-delay:var(--d)}
-.step[data-s=handled]{--c:var(--pink)}.step[data-s=raised]{--c:var(--red)}
-@keyframes slide{from{opacity:0;transform:translateX(-14px)}}
-.step .dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#fff}
-.step .dot .ic{width:18px;height:18px}
-.step .bx{background:var(--field);border-radius:14px;padding:9px 14px;word-break:break-word;border-left:3px solid var(--c)}
-.step code{display:block;color:var(--mute);font:.82rem ui-monospace,monospace;margin-bottom:2px}
-.anslabel{padding:16px 20px 0;color:var(--mute);font-size:.9rem}
-.out{padding:6px 20px 18px;font-size:1.25rem;font-weight:600;white-space:pre-wrap;word-break:break-word}
-details{padding:0 20px 16px;color:var(--mute);font-size:.88rem}summary{cursor:pointer}
-.trace{list-style:none;margin:8px 0 0;padding:0;font:.8rem ui-monospace,monospace}
-.trace li{display:grid;grid-template-columns:60px 50px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);word-break:break-word}
-.hint{color:var(--mute);margin:22px 0 0;display:flex;gap:10px;align-items:center}
-.run[hidden],.hint[hidden]{display:none}
-.calc{max-width:360px;padding:14px;border-radius:24px;background:var(--field);border:1.5px solid var(--line)}
-.calc .screen{width:100%;text-align:right;font-size:1.9rem;font-weight:700;letter-spacing:-.01em;padding:18px 16px;margin-bottom:12px;border-radius:16px;background:var(--solid)}
-.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.key{height:54px;border:0;border-radius:16px;cursor:pointer;font-weight:700;font-size:1.2rem;background:var(--solid);box-shadow:0 2px 0 var(--line);transition:transform .15s,background .2s,color .2s,box-shadow .2s}
-.key:hover{transform:translateY(-2px);box-shadow:0 8px 16px -8px var(--a)}
-.key:active{transform:scale(.92)}
-.key.op{color:var(--pink);background:color-mix(in srgb,var(--pink) 12%,var(--solid))}
-.key.clr{color:var(--red);background:color-mix(in srgb,var(--red) 12%,var(--solid))}
-.key.eq{grid-column:span 4;color:#fff;background:linear-gradient(110deg,var(--a),var(--b));box-shadow:0 12px 24px -10px var(--a)}
-.key.op:hover,.key.clr:hover{color:#fff;background:var(--pink)}.key.clr:hover{background:var(--red)}
-@media(prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}}
-</style>
+<title>ShopPilot — ИИ-консультант магазина</title>
+<meta name="description" content="Агент с ReAct-циклом, инструментами и структурированным ответом: цены, наличие, промокоды, доставка.">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('sp-theme')||'dark'}catch(e){document.documentElement.dataset.theme='light'}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+
+<!-- Иконки: один спрайт, дальше <use href="#i-…"> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-logo" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9L1.5 12l7.9-2.6z"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.3-4.9A8 8 0 1 1 21 12z"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 13h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 13v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2" width="11" height="20" rx="2.8"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 20h20"/></symbol>
+    <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="7" rx="1.8"/><rect x="16.5" y="14" width="4.5" height="7" rx="1.8"/></symbol>
+    <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4.5" y="2" width="15" height="20" rx="2.8"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="i-watch" viewBox="0 0 24 24"><rect x="6.5" y="6" width="11" height="12" rx="3.2"/><path d="M9 6l.6-3.2h4.8L15 6M9 18l.6 3.2h4.8L15 18M12 9.5v2.7l1.6 1"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2.8"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7.5 14h9"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 21h8M12 16v5"/></symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3.2"/><circle cx="12" cy="15" r="3"/><circle cx="12" cy="7" r=".6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.2-4.2"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12 3H4v8l9.3 9.3a2 2 0 0 0 2.8 0l4.2-4.2a2 2 0 0 0 0-2.8z"/><circle cx="7.6" cy="7.6" r="1.3"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol>
+    <symbol id="i-percent" viewBox="0 0 24 24"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="17" r="2.6"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 9a2.5 2.5 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2.5 2.5 0 0 1 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1z"/><path d="M14 5.5v2M14 11v2M14 16.5v2"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path d="M2 6h11v10H2z"/><path d="M13 9h4l4 4v3h-8"/><circle cx="6.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></symbol>
+    <symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.8"/><path d="M8.5 6.5h7M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18.5h.01M12 18.5h.01"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4"/><path d="M12 2.5a6.2 6.2 0 0 0-3.6 11.3c.6.5 1.1 1.3 1.1 2.2h5c0-.9.5-1.7 1.1-2.2A6.2 6.2 0 0 0 12 2.5z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4M12 17.4h.01"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M21.5 2.5 10.5 13.5"/><path d="M21.5 2.5l-7 19-4-8.5-8.5-4z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13.5A9 9 0 1 1 10.5 3a7 7 0 0 0 10.5 10.5z"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11 3l1.9 5.6L18.5 10.5l-5.6 1.9L11 18l-1.9-5.6L3.5 10.5l5.6-1.9z"/><path d="M19 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2.4"/><path d="M5 15V5.5A2.5 2.5 0 0 1 7.5 3H15"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11V9.5A3.5 3.5 0 0 1 6.5 6H21M7 22l-4-4 4-4"/><path d="M21 13v1.5a3.5 3.5 0 0 1-3.5 3.5H3"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 2.5 2.5 7.5 12 12.5l9.5-5z"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16.5l9.5 5 9.5-5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.8 7-7 0-3.2-2-5.2-3.2-7.2-.9 1-1.9 1.4-3 1 .2-3-1-5.2-3.3-6.8C9.200 7.800 5 9.800 5 15c0 4.200 3 7 7 7z"/></symbol>
+    <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14.500c1 1.300 2.400 2 4 2s3-.7 4-2M9 9.500h.01M15 9.500h.01"/></symbol>
+    <symbol id="i-meh" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.500 15.500h7M9 9.500h.01M15 9.500h.01"/></symbol>
+    <symbol id="i-frown" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 16.500c1-1.300 2.400-2 4-2s3 .7 4 2M9 9.500h.01M15 9.500h.01"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15.500" r="4"/><path d="m11 12.500 9.500-9.500M16 7.500l3 3"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M8 8a2.500 2.500 0 1 1 0-5c2 0 4 2.500 4 5 0-2.500 2-5 4-5a2.500 2.500 0 1 1 0 5"/></symbol>
+  </defs>
+</svg>
+
 <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
-<main class="wrap">
-  <header>
-    <div class="brand"><span class="logo" id="logo"></span>Tool Lab</div>
-    <div class="tools-r">
-      <div class="ai-wrap"><button class="ai" id="ai" data-on="false" aria-expanded="false"><span class="face" id="face"></span><span id="aitext">ИИ спит</span><span class="zz">z<b>z</b><b>z</b></span></button>
-        <div class="pop" id="pop" hidden><p id="popmsg"></p><p>Создай файл <b>.env</b> рядом с <b>app.py</b> и впиши строку:</p><code>GROQ_API_KEY=gsk_твой_ключ</code><p style="margin-top:8px">Сохрани файл. Перезапуск не нужен.</p></div></div>
-      <button class="theme" id="theme" aria-label="Сменить тему"><span class="knob"><span class="si" id="sun"></span><span class="mi" id="moon"></span></span></button>
+
+<div class="app">
+
+  <!-- ═══ Верхняя панель ═══ -->
+  <header class="top rise" style="--i:0">
+    <div class="brand">
+      <div class="logo"><svg class="i"><use href="#i-logo"/></svg></div>
+      <div>
+        <div class="brand-name">ShopPilot</div>
+        <div class="brand-sub">ИИ-консультант магазина</div>
+      </div>
+    </div>
+    <div class="top-r">
+      <div class="status" id="status" data-ready="unknown" title="Состояние подключения к OpenAI">
+        <span class="dot"></span><span id="statusText">проверяю…</span>
+      </div>
+      <button class="icon-btn theme" id="themeBtn" aria-label="Сменить тему">
+        <svg class="i sun"><use href="#i-sun"/></svg>
+        <svg class="i moon"><use href="#i-moon"/></svg>
+      </button>
     </div>
   </header>
 
-  <section class="hero">
-    <h1>Функции, которые<br>не боятся ошибок</h1>
-    <p class="lead">Выбери функцию, заполни поля и нажми кнопку. Сначала попробуй правильный пример, потом ошибочный и посмотри, как программа реагирует.</p>
-  </section>
+  <!-- ═══ Левая колонка ═══ -->
+  <aside class="side rise" style="--i:1">
+    <nav class="panel nav" id="nav">
+      <button class="nav-btn" data-view="assistant" aria-current="page">
+        <span class="tile"><svg class="i"><use href="#i-chat"/></svg></span>
+        <span><b>Ассистент</b><small>Агент с инструментами</small></span>
+      </button>
+      <button class="nav-btn" data-view="tickets">
+        <span class="tile"><svg class="i"><use href="#i-inbox"/></svg></span>
+        <span><b>Обращения</b><small>Structured output</small></span>
+      </button>
+    </nav>
 
-  <div class="legend" aria-label="Три возможных результата">
-    <div class="lamp" data-s="success"><span class="ico" data-i="check"></span><div><b>Всё получилось</b>Функция дала ответ.</div></div>
-    <div class="lamp" data-s="handled"><span class="ico" data-i="alert"></span><div><b>Ошибка, но справились</b>Функция объяснила, что не так.</div></div>
-    <div class="lamp" data-s="raised"><span class="ico" data-i="x"></span><div><b>Программа упала</b>Ошибка не обработана.</div></div>
-  </div>
+    <section class="panel cat">
+      <h3 class="eyebrow">Каталог <em>нажми, чтобы спросить</em></h3>
+      <ul class="plist" id="productList"></ul>
+      <div class="promos" id="promoList"></div>
+    </section>
+  </aside>
 
-  <section class="lab">
-    <nav class="nav glass" id="nav" aria-label="Функции"></nav>
-    <div class="stage glass" id="stage">
-      <div class="sh"><div class="big" id="big"></div><h2 id="title"></h2></div>
-      <p class="explain" id="explain"></p>
-      <div class="try" id="try"></div>
-      <div class="form" id="form"></div>
-      <button class="run" id="run"></button>
-      <div class="res" id="res" hidden></div>
-      <p class="hint" id="hint"></p>
+  <!-- ═══ Центр ═══ -->
+  <main class="panel main rise" style="--i:2">
+
+    <div class="banner" id="keyBanner" hidden>
+      <svg class="i"><use href="#i-key"/></svg>
+      <div><b>Ключ OpenAI не найден.</b> Добавь в файл <code>.env</code> рядом с <code>app.py</code> строку <code>OPENAI_API_KEY=sk-…</code> — перезапуск не нужен.</div>
     </div>
-  </section>
-</main>
 
-<script>
-const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const P = {
-  calculator:'<rect x="4" y="2" width="16" height="20" rx="3"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h.01M16 19h.01"/>',
-  unit_converter:'<path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.300 2.700a1 1 0 0 1 1.400 0l4.600 4.600a1 1 0 0 1 0 1.400z"/><path d="m7.500 10.500 2 2M10.500 7.500l2 2M13.500 4.500l2 2"/>',
-  currency:'<circle cx="12" cy="12" r="10"/><path d="M15 9.500c-.5-1-1.600-1.500-3-1.500-1.700 0-3 .8-3 2s1.300 1.700 3 2 3 .8 3 2-1.300 2-3 2c-1.400 0-2.500-.5-3-1.500M12 6v2m0 8v2"/>',
-  bmi:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
-  date_diff:'<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>',
-  text_stats:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/>',
-  password_check:'<rect x="3" y="11" width="18" height="11" rx="3"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
-  get_weather:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M2 12h2M20 12h2M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400"/>',
-  flaky_api:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
-  parse_json:'<path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/>',
-  ai_agent:'<rect x="3" y="8" width="18" height="12" rx="4"/><path d="M12 8V5M9 14v.01M15 14v.01"/><circle cx="12" cy="4" r="1"/>',
-  ai_selfheal:'<path d="M14.700 6.300a4 4 0 0 0-5.400 5.400L3 18l3 3 6.300-6.300a4 4 0 0 0 5.400-5.400l-2.600 2.600-2.400-.6-.6-2.400z"/>',
-  check:'<path d="M20 6 9 17l-5-5"/>', alert:'<path d="M12 9v4M12 17h.01"/><path d="M10.300 3.900 1.800 18a2 2 0 0 0 1.700 3h17a2 2 0 0 0 1.700-3L13.700 3.900a2 2 0 0 0-3.400 0z"/>',
-  x:'<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6m0-6 6 6"/>',
-  sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2.500V5M12 19v2.500M2.500 12H5M19 12h2.500M5.300 5.300l1.800 1.800M16.900 16.900l1.800 1.800M5.300 18.700l1.800-1.800M16.900 7.100l1.800-1.800"/>',
-  moon:'<path d="M20 14.500A8.500 8.500 0 0 1 9.500 4a8.500 8.500 0 1 0 10.500 10.500z"/><path d="M17 3v3M15.500 4.500h3"/>',
-  key:'<circle cx="7.500" cy="15.500" r="4.500"/><path d="m10.700 12.300 9.300-9.300M17 6l3 3"/>',
-  play:'<path d="m6 3 14 9-14 9z"/>', loader:'<path d="M21 12a9 9 0 1 1-6.200-8.600"/>',
-  spark:'<path d="m12 3 1.900 5.800L20 10.500l-5 3.700 1.800 6L12 16.800 7.200 20.200l1.800-6-5-3.700 6.100-1.700z"/>', wrench:'<path d="M14.700 6.300a4 4 0 0 0-5.400 5.400L3 18l3 3 6.300-6.300a4 4 0 0 0 5.400-5.400l-2.600 2.600-2.400-.6-.6-2.400z"/>'
-};
-const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n] || P.spark}</svg>`;
-const GROUPS = {basic: 'Обычные функции', demo: 'Показ ошибок', ai: 'ИИ сам вызывает функции (Groq)'};
-let tools = [], cur;
+    <!-- Ассистент -->
+    <section class="view" id="view-assistant">
+      <div class="view-head">
+        <div>
+          <h1>Спроси магазин — агент сам всё найдёт и посчитает</h1>
+          <p class="lede">Он рассуждает шагами, вызывает инструменты и возвращает типизированный чек.</p>
+        </div>
+        <div class="seg" id="modeSwitch" style="--i:0" role="tablist" aria-label="Режим агента">
+          <span class="pill"></span>
+          <button role="tab" data-mode="react" aria-selected="true"><svg class="i"><use href="#i-repeat"/></svg>ReAct</button>
+          <button role="tab" data-mode="tools" aria-selected="false"><svg class="i"><use href="#i-bolt"/></svg>Tool calling</button>
+        </div>
+      </div>
+      <p class="mode-hint" id="modeHint"></p>
 
-// тема
-$('sun').innerHTML = ic('sun'); $('moon').innerHTML = ic('moon'); $('logo').innerHTML = ic('spark'); $('face').innerHTML = ic('ai_agent');
-document.querySelectorAll('[data-i]').forEach(e => e.innerHTML = ic(e.dataset.i));
-$('theme').onclick = () => {
-  const h = document.documentElement; h.classList.add('tx');
-  h.dataset.theme = h.dataset.theme === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('theme', h.dataset.theme); setTimeout(() => h.classList.remove('tx'), 600);
-};
-async function aiStatus() {
-  let on = false;
-  try { on = (await (await fetch('/api/status')).json()).ai_ready; } catch {}
-  $('ai').dataset.on = on; $('aitext').textContent = on ? 'ИИ проснулся' : 'ИИ спит';
-  $('popmsg').innerHTML = on ? '<b>Ключ найден.</b> ИИ-функции готовы к работе.' : '<b>Ключ Groq не найден.</b> Разбуди ИИ:';
-}
-$('ai').onclick = () => { const p = $('pop'); p.hidden = !p.hidden; $('ai').setAttribute('aria-expanded', !p.hidden); aiStatus(); };
-document.addEventListener('click', e => { if (!e.target.closest('.ai-wrap')) $('pop').hidden = true; });
-aiStatus();
-$('run').innerHTML = ic('play') + '<span>Запустить</span>';
-$('hint').innerHTML = ic('spark') + 'Результат появится здесь.';
+      <div class="chat" id="chat" aria-live="polite">
+        <div class="hero" id="hero">
+          <div class="how" id="how"></div>
+          <div class="starters" id="starters"></div>
+        </div>
+      </div>
 
-async function init() {
-  tools = await (await fetch('/api/tools')).json();
-  $('nav').innerHTML = Object.entries(GROUPS).map(([g, name]) =>
-    `<h5>${name}</h5>` + tools.map((t, i) => t.group === g
-      ? `<button class="tool" data-g="${g}" data-i="${i}" aria-pressed="false"><span class="tile">${ic(t.name)}</span>${t.title}</button>` : '').join('')).join('');
-  $('nav').onclick = e => { const b = e.target.closest('.tool'); if (b) pick(+b.dataset.i); };
-  pick(0);
-}
+      <form class="composer" id="composer" autocomplete="off">
+        <button type="button" class="icon-btn ghost" id="resetBtn" title="Очистить диалог" aria-label="Очистить диалог"><svg class="i"><use href="#i-trash"/></svg></button>
+        <textarea id="q" rows="1" maxlength="600" placeholder="Спроси про цену, наличие, промокод или доставку…"></textarea>
+        <button class="send" id="sendBtn" type="submit" aria-label="Отправить"><svg class="i"><use href="#i-send"/></svg></button>
+      </form>
+    </section>
 
-const KEYS = [['C','C','clr'],['⌫','⌫','clr'],['(','(','op'],[')',')','op'],['7','7'],['8','8'],['9','9'],['÷','/','op'],
-  ['4','4'],['5','5'],['6','6'],['×','*','op'],['1','1'],['2','2'],['3','3'],['−','-','op'],['0','0'],['.','.'],['xʸ','**','op'],['+','+','op'],['=','=','eq']];
-function calcHTML() {
-  return `<div class="calc"><input class="screen" id="f_expression" data-n="expression" data-t="s" placeholder="0" autocomplete="off" aria-label="Выражение">
-    <div class="keys">${KEYS.map(([l, v, c]) => `<button class="key ${c || ''}" data-v="${v}">${l}</button>`).join('')}</div></div>`;
-}
-$('form').addEventListener('click', e => {
-  const k = e.target.closest('.key'); if (!k) return;
-  const inp = $('f_expression'), v = k.dataset.v;
-  if (v === 'C') inp.value = ''; else if (v === '⌫') inp.value = inp.value.slice(0, -1);
-  else if (v === '=') return $('run').click(); else inp.value += v;
-  inp.focus();
-});
-$('form').addEventListener('keydown', e => { if (e.key === 'Enter' && cur.name === 'calculator') $('run').click(); });
+    <!-- Обращения -->
+    <section class="view" id="view-tickets" hidden>
+      <div class="view-head">
+        <div>
+          <h1>Разбор обращения клиента</h1>
+          <p class="lede">Свободный текст на любом языке → строгая схема: тема, срочность, тон, приоритет и черновик ответа.</p>
+        </div>
+      </div>
+      <div class="ticket-body">
+        <div class="examples" id="ticketExamples"></div>
+        <textarea id="ticketText" rows="5" maxlength="1500" placeholder="Вставь сообщение клиента…"></textarea>
+        <div class="ticket-actions">
+          <span class="hint">Ctrl + Enter — отправить</span>
+          <button class="btn" id="ticketBtn"><svg class="i"><use href="#i-layers"/></svg><span>Разобрать</span></button>
+        </div>
+        <div id="ticketOut"></div>
+      </div>
+    </section>
+  </main>
 
-function field(name, p, tool) {
-  const label = `<label for="f_${name}">${esc(p.title || name)}</label>`;
-  const hint = p.description ? `<small>${esc(p.description)}</small>` : '';
-  const opts = p.enum || (p.anyOf && p.anyOf.find(x => x.enum)?.enum);
-  let el;
-  if (opts) el = `<select id="f_${name}" data-n="${name}" data-t="s">${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
-  else if (p.type === 'number' || p.type === 'integer') el = `<input id="f_${name}" data-n="${name}" data-t="n" type="number" step="any">`;
-  else if (tool.long.includes(name)) el = `<textarea id="f_${name}" data-n="${name}" data-t="s"></textarea>`;
-  else el = `<input id="f_${name}" data-n="${name}" data-t="s" type="text" autocomplete="off">`;
-  return `<div class="f">${label}${el}${hint}</div>`;
-}
+  <!-- ═══ Правая колонка: ход мысли ═══ -->
+  <aside class="panel trace rise" style="--i:3">
+    <div class="trace-head">
+      <h3 class="eyebrow">Ход мысли агента</h3>
+      <div class="trace-stats" id="traceStats"></div>
+    </div>
+    <div class="trace-body" id="traceBody">
+      <div class="trace-empty" id="traceEmpty">
+        <div class="cycle">
+          <span><svg class="i"><use href="#i-bulb"/></svg>Thought</span>
+          <span><svg class="i"><use href="#i-bolt"/></svg>Action</span>
+          <span><svg class="i"><use href="#i-eye"/></svg>Observation</span>
+        </div>
+        <p>Здесь появится каждый шаг цикла ReAct: что агент решил, какой инструмент вызвал и что получил в ответ.</p>
+        <div class="tool-chips" id="toolChips"></div>
+      </div>
+    </div>
+  </aside>
+</div>
 
-function pick(i) {
-  cur = tools[i];
-  document.querySelectorAll('.tool').forEach(b => b.setAttribute('aria-pressed', +b.dataset.i === i));
-  const st = $('stage'); st.dataset.g = cur.group; st.classList.remove('swap'); void st.offsetWidth; st.classList.add('swap');
-  $('big').innerHTML = ic(cur.name); $('title').textContent = cur.title; $('explain').textContent = cur.explain;
-  $('try').innerHTML = '<span>Примеры:</span>' + cur.examples.map((x, j) =>
-    `<button class="chip" data-k="${x.kind}" data-j="${j}">${ic(x.kind === 'ok' ? 'check' : 'alert')}${esc(x.label)}</button>`).join('');
-  $('try').onclick = e => { const c = e.target.closest('.chip'); if (c) fill(cur.examples[+c.dataset.j].args); };
-  $('form').innerHTML = cur.name === 'calculator' ? calcHTML() : Object.entries(cur.schema.properties).map(([n, p]) => field(n, p, cur)).join('');
-  $('run').hidden = cur.name === 'calculator';
-  $('res').hidden = true; $('hint').hidden = false;
-  fill(cur.examples[0].args);
-}
-
-function fill(args) {
-  document.querySelectorAll('#form [data-n]').forEach(el => {
-    const v = args[el.dataset.n]; el.value = v === undefined ? (cur.schema.properties[el.dataset.n].default ?? '') : v;
-  });
-}
-function collect() {
-  const a = {};
-  document.querySelectorAll('#form [data-n]').forEach(el => {
-    if (el.dataset.t === 'n') { if (el.value !== '') a[el.dataset.n] = Number(el.value); }
-    else a[el.dataset.n] = el.value;
-  });
-  return a;
-}
-
-const INFO = {
-  success: ['Всё получилось', 'Функция отработала без проблем.', 'check'],
-  handled: ['Ошибка, но программа справилась', 'Функция не упала: она поймала ошибку и вернула понятное объяснение. ИИ-агент получил бы эту подсказку и смог бы исправить свой вызов.', 'alert'],
-  raised: ['Программа упала', 'Здесь нет защиты от ошибок, поэтому исключение вырвалось наружу. В реальном агенте это остановило бы всю работу.', 'x']
-};
-
-$('run').onclick = async () => {
-  const b = $('run'); b.disabled = true; b.innerHTML = ic('loader', 'spin') + '<span>Выполняю…</span>';
-  let d;
-  try {
-    const r = await fetch('/api/invoke', {method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({tool: cur.name, args: collect()})});
-    d = await r.json();
-  } catch { d = {status: 'raised', output: 'Сервер не отвечает. Запусти: uvicorn app:app --reload', ms: 0, trace: []}; }
-  show(d);
-  b.disabled = false; b.innerHTML = ic('play') + '<span>Запустить</span>';
-};
-
-function show(d) {
-  document.querySelectorAll('.lamp').forEach(l => l.classList.toggle('on', l.dataset.s === d.status));
-  $('hint').hidden = true;
-  const r = $('res'); r.hidden = false; r.dataset.s = d.status;
-  r.style.animation = 'none'; void r.offsetWidth; r.style.animation = '';
-  let [head, why, icon] = INFO[d.status];
-  if (d.steps) {
-    if (!d.steps.length) [head, why] = ['ИИ ответил', 'ИИ решил, что функции не нужны, и ответил сам.'];
-    else if (d.status === 'success') [head, why] = ['ИИ справился', 'ИИ сам выбрал функции из кода и вызвал их. Ниже каждый шаг.'];
-    else [head, why] = ['Была ошибка, ИИ отреагировал', 'Функция вернула ошибку, ИИ прочитал подсказку и исправил вызов или объяснил, почему задача невыполнима.'];
-  }
-  const si = {success: 'check', handled: 'alert', raised: 'x'};
-  const steps = d.steps && d.steps.length ? `<div class="steps">${d.steps.map((s, i) =>
-    `<div class="step" data-s="${s.status}" style="--d:${i * 140}ms"><span class="dot">${ic(si[s.status])}</span><div class="bx"><code>${esc(s.tool)}(${esc(Object.entries(s.args).map(([k, v]) => k + '=' + JSON.stringify(v)).join(', '))})</code>${esc(s.output)}</div></div>`).join('')}</div>` : '';
-  r.innerHTML = `<div class="banner">${ic(icon)}${head}</div><div class="why">${why}</div>${steps}
-    ${d.steps ? '<div class="anslabel">Ответ ИИ</div>' : ''}<div class="out">${esc(d.output)}</div>
-    <details><summary>Технические детали (${d.ms} мс)</summary><ul class="trace">${d.trace.map(e =>
-      `<li><span>${e.ms} мс</span><span>${e.kind}</span><span>${esc(e.detail)}</span></li>`).join('')}</ul></details>`;
-}
-init();
-</script>
+<script src="/static/app.js"></script>
 </body>
 </html>
